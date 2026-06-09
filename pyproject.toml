@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+cache_dir = ".tmp/pytest_cache"
+addopts = "-q"
+

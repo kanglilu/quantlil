@@ -1,0 +1,13 @@
+APScheduler==3.10.4
+boto3==1.40.61
+pandas==2.2.2
+pyarrow==21.0.0
+pytest==8.3.2
+python-binance==1.0.19
+python-dotenv==1.0.1
+python-telegram-bot==21.4
+pytrends==4.9.2
+requests==2.32.3
+scipy==1.14.0
+supabase==2.31.0
+yfinance==1.4.1
