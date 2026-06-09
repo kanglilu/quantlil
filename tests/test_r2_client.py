@@ -232,6 +232,66 @@ def test_data_lake_merges_daily_file_without_duplicates() -> None:
     assert catalog.rows[object_key]["row_count"] == 3
 
 
+def test_data_lake_normalizes_mixed_values_before_parquet_upload() -> None:
+    r2 = object.__new__(R2Store)
+    r2.settings = SimpleNamespace(
+        r2_bucket="quant",
+        retry_attempts=1,
+        retry_base_delay=0,
+    )
+    r2.logger = logging.getLogger("test-r2")
+    r2.client = FakeS3Client()
+    catalog = FakeCatalog()
+    lake = DataLakeWriter(r2, catalog)  # type: ignore[arg-type]
+    object_key = (
+        "raw/alternative/polymarket/metric=total_volume_24h/"
+        "year=2026/month=06/day=09/data.parquet"
+    )
+
+    asyncio.run(
+        lake.archive_rows(
+            namespace="alternative",
+            dataset="polymarket",
+            rows=[
+                {
+                    "source": "polymarket",
+                    "metric_name": "total_volume_24h",
+                    "timestamp": "2026-06-09T12:00:00+00:00",
+                    "value": 138677529.125854,
+                    "label": None,
+                }
+            ],
+            unique_keys=("source", "metric_name", "timestamp"),
+            partitions={"metric": "total_volume_24h"},
+        )
+    )
+    asyncio.run(
+        lake.archive_rows(
+            namespace="alternative",
+            dataset="polymarket",
+            rows=[
+                {
+                    "source": "polymarket",
+                    "metric_name": "total_volume_24h",
+                    "timestamp": "2026-06-09T18:00:00+00:00",
+                    "value": "155627413.3720149719851917",
+                    "label": None,
+                }
+            ],
+            unique_keys=("source", "metric_name", "timestamp"),
+            partitions={"metric": "total_volume_24h"},
+        )
+    )
+
+    restored = pd.read_parquet(
+        io.BytesIO(r2.client.objects[object_key]["Body"])
+    )
+    assert restored["value"].tolist() == [
+        "138677529.125854",
+        "155627413.3720149719851917",
+    ]
+
+
 def test_data_lake_reader_loads_btc_and_features() -> None:
     r2 = object.__new__(R2Store)
     r2.settings = SimpleNamespace(

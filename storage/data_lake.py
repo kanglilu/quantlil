@@ -150,6 +150,10 @@ class DataLakeWriter:
         merged["fetched_at"] = pd.to_datetime(
             merged["fetched_at"], utc=True, errors="coerce"
         )
+        if "value" in merged.columns:
+            merged["value"] = merged["value"].map(
+                lambda value: None if pd.isna(value) else str(value)
+            )
         merged = merged.dropna(subset=["timestamp"])
         missing = [key for key in unique_keys if key not in merged.columns]
         if missing:
